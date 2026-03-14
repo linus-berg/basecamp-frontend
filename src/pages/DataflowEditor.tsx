@@ -24,6 +24,10 @@ import TransformNode from '../components/nodes/TransformNode';
 import FilterNode from '../components/nodes/FilterNode';
 import JoinNode from '../components/nodes/JoinNode';
 import PrivacyNode from '../components/nodes/PrivacyNode';
+import RouterNode from '../components/nodes/RouterNode';
+import AggregatorNode from '../components/nodes/AggregatorNode';
+import EnrichmentNode from '../components/nodes/EnrichmentNode';
+import AlertNode from '../components/nodes/AlertNode';
 import { 
   CloudArrowUpIcon, 
   ChevronLeftIcon, 
@@ -36,7 +40,11 @@ import {
   ArrowsPointingInIcon,
   ShieldCheckIcon,
   AdjustmentsHorizontalIcon,
-  XMarkIcon
+  XMarkIcon,
+  ArrowsRightLeftIcon,
+  CalculatorIcon,
+  PlusCircleIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
 
 const nodeTypes = {
@@ -47,6 +55,10 @@ const nodeTypes = {
   filterNode: FilterNode,
   joinNode: JoinNode,
   privacyNode: PrivacyNode,
+  routerNode: RouterNode,
+  aggregatorNode: AggregatorNode,
+  enrichmentNode: EnrichmentNode,
+  alertNode: AlertNode,
 };
 
 const DataflowEditor: React.FC = () => {
@@ -280,6 +292,15 @@ const DataflowEditor: React.FC = () => {
             if (curr.type === 'privacyNode' && curr.data.method) {
               intermediateInfo.push({ type: 'PRIVACY', label: curr.data.label, value: curr.data.method });
             }
+            if (curr.type === 'routerNode' && curr.data.routingLogic) {
+              intermediateInfo.push({ type: 'ROUTER', label: curr.data.label, value: curr.data.routingLogic });
+            }
+            if (curr.type === 'aggregatorNode' && curr.data.aggregationType) {
+              intermediateInfo.push({ type: 'AGGREGATE', label: curr.data.label, value: curr.data.aggregationType });
+            }
+            if (curr.type === 'enrichmentNode' && curr.data.lookupSource) {
+              intermediateInfo.push({ type: 'ENRICH', label: curr.data.label, value: curr.data.lookupSource });
+            }
           });
 
           const sinkNode = nodes.find(n => n.id === sinkId);
@@ -383,13 +404,15 @@ const DataflowEditor: React.FC = () => {
   const SOURCE_VARIANTS = ['Database', 'API Endpoint', 'Message Queue', 'File System', 'Manual Input'];
   const SINK_VARIANTS = ['Database', 'API Endpoint', 'Message Queue', 'File System', 'Dashboard / UI'];
   const PRIVACY_METHODS = ['Masking', 'Encryption', 'Anonymization', 'Pseudonymization', 'Redaction'];
+  const AGGREGATION_TYPES = ['Sum', 'Average', 'Count', 'Min', 'Max', 'Group Concat'];
+  const ALERT_TARGETS = ['Email', 'Slack', 'Teams', 'PagerDuty', 'Webhook'];
 
   const dfMeta: ProjectMetadata = dataflow?.metadata ? JSON.parse(dataflow.metadata) : {};
 
   return (
     <div className="flex-1 flex overflow-hidden h-[calc(100vh-73px)] relative bg-slate-50">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col p-4 space-y-4 overflow-y-auto">
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col p-4 space-y-4 overflow-y-auto custom-scrollbar">
         <button 
           onClick={() => navigate(`/project/${dataflow?.projectId}`)}
           className="text-[10px] text-slate-400 flex items-center gap-1 mb-2 hover:text-indigo-600 font-black uppercase tracking-[0.2em] transition-colors"
@@ -420,16 +443,20 @@ const DataflowEditor: React.FC = () => {
           {saveStatus === 'error' && <div className="text-[9px] text-red-500 font-black uppercase">Sync failed</div>}
         </div>
 
-        <h3 className="font-black text-slate-900 px-2 uppercase text-[10px] tracking-[0.2em] pt-2">Components</h3>
+        <h3 className="font-black text-slate-900 px-2 uppercase text-[10px] tracking-[0.2em] pt-2">Library</h3>
         <div className="space-y-1.5">
           {[
-            { type: 'sourceNode', label: 'Source', color: 'emerald' },
-            { type: 'sinkNode', label: 'Sink', color: 'red' },
-            { type: 'attributeNode', label: 'Attribute', color: 'amber' },
-            { type: 'transformNode', label: 'Transform', color: 'blue' },
-            { type: 'filterNode', label: 'Filter', color: 'purple' },
-            { type: 'joinNode', label: 'Join', color: 'cyan' },
-            { type: 'privacyNode', label: 'Privacy', color: 'slate' },
+            { type: 'sourceNode', label: 'Source', color: 'emerald', icon: null },
+            { type: 'sinkNode', label: 'Sink', color: 'red', icon: null },
+            { type: 'attributeNode', label: 'Attribute', color: 'amber', icon: <TagIcon className="w-3 h-3" /> },
+            { type: 'transformNode', label: 'Transform', color: 'blue', icon: <CodeBracketIcon className="w-3 h-3" /> },
+            { type: 'filterNode', label: 'Filter', color: 'purple', icon: <FunnelIcon className="w-3 h-3" /> },
+            { type: 'joinNode', label: 'Join', color: 'cyan', icon: <ArrowsPointingInIcon className="w-3 h-3" /> },
+            { type: 'privacyNode', label: 'Privacy', color: 'slate', icon: <ShieldCheckIcon className="w-3 h-3" /> },
+            { type: 'routerNode', label: 'Router', color: 'indigo', icon: <ArrowsRightLeftIcon className="w-3 h-3" /> },
+            { type: 'aggregatorNode', label: 'Aggregator', color: 'lime', icon: <CalculatorIcon className="w-3 h-3" /> },
+            { type: 'enrichmentNode', label: 'Enrichment', color: 'teal', icon: <PlusCircleIcon className="w-3 h-3" /> },
+            { type: 'alertNode', label: 'Alert', color: 'rose', icon: <BellIcon className="w-3 h-3" /> },
           ].map(item => (
             <div 
               key={item.type}
@@ -437,7 +464,7 @@ const DataflowEditor: React.FC = () => {
               onDragStart={(e) => e.dataTransfer.setData('application/reactflow', item.type)}
               draggable
             >
-              <div className={`w-2 h-2 rounded-full bg-${item.color}-500 shadow-sm`} /> {item.label}
+              {item.icon ? item.icon : <div className={`w-2 h-2 rounded-full bg-${item.color}-500 shadow-sm`} />} {item.label}
             </div>
           ))}
         </div>
@@ -503,7 +530,7 @@ const DataflowEditor: React.FC = () => {
       </div>
 
       {/* Inspector / Results Panel */}
-      <aside className="w-80 bg-white border-l border-slate-200 p-6 overflow-y-auto">
+      <aside className="w-80 bg-white border-l border-slate-200 p-6 overflow-y-auto custom-scrollbar">
         {selectedNode ? (
           <div className="space-y-8">
             <div>
@@ -559,6 +586,59 @@ const DataflowEditor: React.FC = () => {
                       value={selectedNode.data.condition || ''}
                       onChange={(e) => updateNodeData({ condition: e.target.value })}
                     />
+                  </div>
+                )}
+
+                {selectedNode.type === 'routerNode' && (
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Routing Logic</label>
+                    <textarea 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-indigo-700 focus:border-indigo-500 outline-none transition-all h-32 resize-none"
+                      placeholder="Define branching switch logic..."
+                      value={selectedNode.data.routingLogic || ''}
+                      onChange={(e) => updateNodeData({ routingLogic: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                {selectedNode.type === 'aggregatorNode' && (
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Aggregation Method</label>
+                    <select
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+                      value={selectedNode.data.aggregationType || ''}
+                      onChange={(e) => updateNodeData({ aggregationType: e.target.value })}
+                    >
+                      <option value="">SELECT METHOD...</option>
+                      {AGGREGATION_TYPES.map(v => <option key={v} value={v}>{v.toUpperCase()}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {selectedNode.type === 'enrichmentNode' && (
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">External Lookup Source</label>
+                    <input 
+                      type="text" 
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-teal-700 focus:border-teal-500 outline-none transition-all"
+                      placeholder="e.g. User-Service API"
+                      value={selectedNode.data.lookupSource || ''}
+                      onChange={(e) => updateNodeData({ lookupSource: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                {selectedNode.type === 'alertNode' && (
+                  <div>
+                    <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Notification Target</label>
+                    <select
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-rose-700 focus:border-rose-500 outline-none transition-all cursor-pointer"
+                      value={selectedNode.data.alertTarget || ''}
+                      onChange={(e) => updateNodeData({ alertTarget: e.target.value })}
+                    >
+                      <option value="">SELECT TARGET...</option>
+                      {ALERT_TARGETS.map(v => <option key={v} value={v}>{v.toUpperCase()}</option>)}
+                    </select>
                   </div>
                 )}
 
@@ -659,6 +739,9 @@ const DataflowEditor: React.FC = () => {
                                       <span className={`text-[8px] font-black px-1 rounded ${
                                         inf.type === 'TRANSFORM' ? 'bg-blue-100 text-blue-700' :
                                         inf.type === 'FILTER' ? 'bg-purple-100 text-purple-700' :
+                                        inf.type === 'ROUTER' ? 'bg-indigo-100 text-indigo-700' :
+                                        inf.type === 'AGGREGATE' ? 'bg-lime-100 text-lime-700' :
+                                        inf.type === 'ENRICH' ? 'bg-teal-100 text-teal-700' :
                                         'bg-slate-100 text-slate-700'
                                       }`}>{inf.type}</span>
                                       <span className="text-[9px] font-bold text-slate-400 uppercase">{inf.label}</span>

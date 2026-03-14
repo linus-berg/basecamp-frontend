@@ -24,13 +24,17 @@ export interface NodeData {
   logic?: string; // For Transform/Logic
   condition?: string; // For Filter
   method?: string; // For Privacy (e.g. Masking, Encryption)
+  routingLogic?: string; // For Router
+  aggregationType?: string; // For Aggregator (Sum, Average, etc)
+  lookupSource?: string; // For Enrichment
+  alertTarget?: string; // For Alert (Email, Slack, etc)
   metadata?: Record<string, any>;
 }
 
 export interface Node {
   id?: string;
   reactFlowId: string;
-  type: 'sourceNode' | 'sinkNode' | 'attributeNode' | 'transformNode' | 'filterNode' | 'joinNode' | 'privacyNode';
+  type: 'sourceNode' | 'sinkNode' | 'attributeNode' | 'transformNode' | 'filterNode' | 'joinNode' | 'privacyNode' | 'routerNode' | 'aggregatorNode' | 'enrichmentNode' | 'alertNode';
   positionX: number;
   positionY: number;
   data: string; // JSON string of NodeData
